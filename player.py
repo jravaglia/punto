@@ -74,7 +74,7 @@ class Card:
 
 class EmptyCard(Card):
     def __init__(self, x, y, width):
-        Card.__init__(self, x, y, width, -1, -1)
+        Card.__init__(self, x, y, width, p=-1, value=-1)
 
 
 class Player:
@@ -190,6 +190,13 @@ class Game:
         self.current_player = self.players[0]
         self.start_game()
 
+    @property
+    def goal(self):
+        if self.n_player == 2:
+            return 6
+        else:
+            return 5
+
     def start_game(self):
         self.current_player.playing = True
         self.current_player.draw_card()
@@ -216,6 +223,49 @@ class Game:
                 self.board.game_start = False
                 self.next_player()
                 break
+
+    def is_winner(self):
+        # check all columns
+        for i in range(N_COL):
+            check_list = []
+            for j in range(N_ROW):
+                check_list.append(self.board.board[(i, j)])
+            winner = self.is_winning_list(check_list)
+            if winner >= 0:
+                return winner
+
+        # check all rows
+        for i in range(N_COL):
+            check_list = []
+            for j in range(N_ROW):
+                check_list.append(self.board.board[(j, i)])
+            winner = self.is_winning_list(check_list)
+            if winner >= 0:
+                return winner
+
+        # check diagonales
+        # for
+
+    def is_winning_list(self, l):
+        if len(l) < self.goal:
+            return False
+
+        prev_card = l[0]
+        cumul = 0
+        for card in l[1:]:
+            if card.is_empty():
+                cumul = 0
+            elif prev_card.p == card.p:
+                cumul += 1
+            else: # cards differ
+                prev_card = card
+                cumul = 1
+
+            if cumul == self.goal:
+                return card.p
+        return -1
+
+
 
     def draw(self, win):
         mouse_pos = pygame.mouse.get_pos()
