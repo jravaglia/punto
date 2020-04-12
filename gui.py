@@ -34,8 +34,11 @@ def main():
             if event.type == pygame.QUIT:
                 run = False
                 pygame.quit()
+            if event.type == pygame.MOUSEBUTTONUP:
+                game.play_card(pygame.mouse.get_pos())
 
-        # p1.move()
+        game.update_board()
         redraw_window(win, game)
 
 main()
+
