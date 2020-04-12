@@ -204,17 +204,6 @@ class Game:
         self.current_player.draw_card()
         self.board.set_selectable(self.current_player.current_card.value)
 
-    def update_board(self):
-        # # highlight selectable cards on mouse hover
-        # mouse_pos = pygame.mouse.get_pos()
-        # for card_pos in self.board.set_selectable():
-        #     card_xy = pos_to_xy(card_pos)
-        #     rect = pygame.Rect(card_xy, (CARD_SIZE, CARD_SIZE))
-        #     if rect.collidepoint(mouse_pos):
-        #         p, value = self.board.board[card_pos]
-        #         self.board.board[card_pos] = (p, CARD_HOVER)
-        pass
-
     def play_card(self, pos):
         new_card = self.current_player.current_card
         for card_pos in self.board.get_all_selectables(new_card.value):
