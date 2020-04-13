@@ -42,6 +42,9 @@ class Card:
         # self.state = CARD_EMPTY
         self.selectable = False
 
+    def __repr__(self):
+        return f"Card(p={self.p}, value={self.value})"
+
     @property
     def rect(self):
         return self.x, self.y, self.width, self.width
@@ -235,10 +238,11 @@ class Game:
                 return winner
 
         # check all rows
-        for i in range(N_COL):
+        for i in range(N_ROW):
             check_list = []
-            for j in range(N_ROW):
+            for j in range(N_COL):
                 check_list.append(self.board.board[(j, i)])
+            logging.info(f"row {i}: {check_list}")
             winner = self.is_winning_list(check_list)
             if winner >= 0:
                 return winner
@@ -290,9 +294,11 @@ class Game:
         if len(l) < self.goal:
             return -1
 
-        prev_card = l[0]
+        prev_card = None
         cumul = 0
-        for card in l[1:]:
+        for card in l:
+            if prev_card is None:
+                prev_card = card
             if card.is_empty():
                 cumul = 0
             elif prev_card.p == card.p:
