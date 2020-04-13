@@ -1,5 +1,6 @@
 import pygame
 import random
+import numpy as np
 
 import logging
 logging.basicConfig(level=logging.DEBUG)
@@ -220,6 +221,7 @@ class Game:
             card_xy = pos_to_xy(card_pos)
             rect = pygame.Rect(card_xy, (CARD_SIZE, CARD_SIZE))
             if rect.collidepoint(pos):
+                logging.info(card_pos)
                 prev_card = self.board.board[card_pos]
                 new_card.update_pos(prev_card.x, prev_card.y)
                 self.board.board[card_pos] = new_card
@@ -228,87 +230,49 @@ class Game:
                 break
 
     def is_winner(self):
-        # check all columns
-        for i in range(N_COL):
-            check_list = []
-            for j in range(N_ROW):
-                check_list.append(self.board.board[(i, j)])
-            winner = self.is_winning_list(check_list)
-            if winner >= 0:
-                return winner
 
+        board = np.zeros((N_COL, N_ROW))
+        board.fill(-1)
+        for (x, y), card in self.board.board.items():
+            board[x, y] = card.p
+
+        # transpose board so the columns become the rows
+        # thus we only need to check the rows
+        for m in [board, board.T]:
         # check all rows
-        for i in range(N_ROW):
-            check_list = []
-            for j in range(N_COL):
-                check_list.append(self.board.board[(j, i)])
-            logging.info(f"row {i}: {check_list}")
-            winner = self.is_winning_list(check_list)
-            if winner >= 0:
-                return winner
+            for i in range(N_ROW):
+                winner = self.is_winning_list(m[i])
+                if winner >= 0:
+                    return winner
 
-        # check diagonales
-        # lower left triangle
-        for i in range(N_ROW):
-            check_list = []
-            j = 0
-            for inc in range(0, N_ROW-i):
-                check_list.append(self.board.board[(i+inc, j+inc)])
-            winner = self.is_winning_list(check_list)
-            if winner >= 0:
-                return winner
-
-        # upper right triangle
-        for j in range(N_COL):
-            check_list = []
-            i = 0
-            for inc in range(0, N_COL-j):
-                check_list.append(self.board.board[(i+inc, j+inc)])
-            winner = self.is_winning_list(check_list)
-            if winner >= 0:
-                return winner
-
-        # upper left triangle
-        for j in range(N_COL):
-            check_list = []
-            i = 0
-            for inc in range(j+1):
-                check_list.append(self.board.board[(i+inc, j-inc)])
-            winner = self.is_winning_list(check_list)
-            if winner >= 0:
-                return winner
-
-        # lower right triangle
-        for i in range(N_ROW):
-            check_list = []
-            j = N_ROW - 1
-            for inc in range(N_ROW-i):
-                check_list.append(self.board.board[(i+inc, j-inc)])
-            winner = self.is_winning_list(check_list)
-            if winner >= 0:
-                return winner
-
+        # flip the board so the antidiagonals become the diagonals
+        # thus we only need to check the diagonals
+        for m in [board, np.fliplr(board)]:
+            # offset of all diagonals
+            for offset in range(-N_ROW + 1, N_ROW):
+                winner = self.is_winning_list(m.diagonal(offset))
+                if winner >= 0:
+                    return winner
         return -1
 
     def is_winning_list(self, l):
         if len(l) < self.goal:
             return -1
 
-        prev_card = None
+        prev_card = -1
         cumul = 0
         for card in l:
             if prev_card is None:
                 prev_card = card
-            if card.is_empty():
+            if card == -1:
                 cumul = 0
-            elif prev_card.p == card.p:
+            elif prev_card == card:
                 cumul += 1
             else: # cards differ
                 prev_card = card
                 cumul = 1
-
             if cumul == self.goal:
-                return card.p
+                return card
         return -1
 
     def draw(self, win):
