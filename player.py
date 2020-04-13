@@ -193,9 +193,9 @@ class Game:
     @property
     def goal(self):
         if self.n_player == 2:
-            return 6
-        else:
             return 5
+        else:
+            return 4
 
     def start_game(self):
         self.current_player.playing = True
@@ -244,11 +244,51 @@ class Game:
                 return winner
 
         # check diagonales
-        # for
+        # lower left triangle
+        for i in range(N_ROW):
+            check_list = []
+            j = 0
+            for inc in range(0, N_ROW-i):
+                check_list.append(self.board.board[(i+inc, j+inc)])
+            winner = self.is_winning_list(check_list)
+            if winner >= 0:
+                return winner
+
+        # upper right triangle
+        for j in range(N_COL):
+            check_list = []
+            i = 0
+            for inc in range(0, N_COL-j):
+                check_list.append(self.board.board[(i+inc, j+inc)])
+            winner = self.is_winning_list(check_list)
+            if winner >= 0:
+                return winner
+
+        # upper left triangle
+        for j in range(N_COL):
+            check_list = []
+            i = 0
+            for inc in range(j+1):
+                check_list.append(self.board.board[(i+inc, j-inc)])
+            winner = self.is_winning_list(check_list)
+            if winner >= 0:
+                return winner
+
+        # lower right triangle
+        for i in range(N_ROW):
+            check_list = []
+            j = N_ROW - 1
+            for inc in range(N_ROW-i):
+                check_list.append(self.board.board[(i+inc, j-inc)])
+            winner = self.is_winning_list(check_list)
+            if winner >= 0:
+                return winner
+
+        return -1
 
     def is_winning_list(self, l):
         if len(l) < self.goal:
-            return False
+            return -1
 
         prev_card = l[0]
         cumul = 0
@@ -264,8 +304,6 @@ class Game:
             if cumul == self.goal:
                 return card.p
         return -1
-
-
 
     def draw(self, win):
         mouse_pos = pygame.mouse.get_pos()

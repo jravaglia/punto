@@ -1,6 +1,8 @@
 import pygame
 from network import Network
 from player import (Player, Board, Game)
+import logging
+logging.basicConfig(level=logging.DEBUG)
 
 
 width = 500
@@ -36,8 +38,13 @@ def main():
                 pygame.quit()
             if event.type == pygame.MOUSEBUTTONUP:
                 game.play_card(pygame.mouse.get_pos())
+                winner = game.is_winner()
+                logging.info(f"(gui) winner: {winner}")
+                if winner >= 0:
+                    logging.info("(gui) reset game")
+                    game = Game(2)
 
-        game.update_board()
+        # game.update_board()
         redraw_window(win, game)
 
 main()
