@@ -1,14 +1,22 @@
-import pygame
-from network import Network
-from player import (Player, Board, Game)
+import sys
 import logging
+import pygame
+
+from network import Network
+from player import Game
+from action import Move
+
 logging.basicConfig(level=logging.DEBUG, format="gui: %(message)s")
+
+caption = "Client"
+if len(sys.argv) > 1:
+    caption = sys.argv[1]
 
 
 width = 500
 height = 500
 win = pygame.display.set_mode((width, height))
-pygame.display.set_caption("Client")
+pygame.display.set_caption(caption)
 
 
 class ConnectionWindow:
@@ -67,10 +75,11 @@ def main():
     while run:
         clock.tick(60)
         # need this loop to prevent game from crashing: why?
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                run = False
-                pygame.quit()
+        events = [e.type for e in pygame.event.get()]
+
+        if pygame.QUIT in events:
+            run = False
+            pygame.quit()
 
         if state == "connection":
             if not connection_window.loop():
@@ -81,18 +90,27 @@ def main():
             logging.info("main: after connection loop")
 
         elif state == "game":
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    run = False
-                    pygame.quit()
-                if event.type == pygame.MOUSEBUTTONUP:
-                    game.play_card(pygame.mouse.get_pos())
+            # your turn
+            if game.current_player.p == connection_window.player_id:
+                if pygame.MOUSEBUTTONUP in events:
+                    logging.info("button up")
+                    mouse_pos = pygame.mouse.get_pos()
+                    card_pos = game.play_card(mouse_pos)
+                    if card_pos:
+                        res = n.send(Move(connection_window.player_id, mouse_pos))
                     winner = game.is_winner()
                     logging.info(f"winner: {winner}")
                     if winner >= 0:
                         logging.info("reset game")
                         game = Game(connection_window.player_id,
                                     connection_window.players)
+
+            # others turn
+            else:
+                move = n.send("get_move")
+                logging.info(f"other: {move}")
+                if move:
+                    game.play_card(move.xy_pos)
 
             redraw_window(win, game)
 

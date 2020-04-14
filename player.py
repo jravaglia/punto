@@ -40,7 +40,7 @@ class Card:
         self.width = width
         self.p = p
         self.value = value
-        # self.state = CARD_EMPTY
+        self.border = COLOR_EMPTY
         self.selectable = False
 
     def __repr__(self):
@@ -59,16 +59,15 @@ class Card:
 
     def draw(self, win):
 
-        if self.selectable:
-            border_color = COLOR_SELECTABLE
-        else:
-            border_color = COLOR_EMPTY
+        # if self.selectable:
+        #     border_color = COLOR_SELECTABLE
+        # else:
+        #     border_color = COLOR_EMPTY
 
         card_rect = pygame.Rect(self.rect)
-        pygame.draw.rect(win, border_color, card_rect, 1)
+        pygame.draw.rect(win, self.border, card_rect, 1)
 
         if self.value > 0:
-
             font_obj = pygame.font.SysFont('Sans Serif', 40)
             text_surface_obj = font_obj.render(str(self.value), False, PLAYER_COLORS[self.p])
             text_rect_obj = text_surface_obj.get_rect()
@@ -144,11 +143,12 @@ class Board:
                 x, y = pos_to_xy((i, j))
                 self.board[(i, j)] = EmptyCard(x, y, CARD_SIZE)
 
-    def set_selectable(self, value):
+    def set_selectable(self, value, player_id):
         res = []
         for pos in self.get_all_selectables(value):
             card = self.board[pos]
             card.selectable = True
+            card.border = PLAYER_COLORS[player_id]
             res.append(pos)
 
         return res
@@ -156,6 +156,7 @@ class Board:
     def unset_selectable(self):
         for card in self.board.values():
             card.selectable = False
+            card.border = COLOR_EMPTY
 
     def get_all_selectables(self, value):
         res = set()
@@ -213,7 +214,8 @@ class Game:
     def start_game(self):
         self.current_player.playing = True
         self.current_player.draw_card()
-        self.board.set_selectable(self.current_player.current_card.value)
+        self.board.set_selectable(self.current_player.current_card.value,
+                                  self.current_player.p)
 
     def next_player(self):
         self.board.unset_selectable()
@@ -222,7 +224,8 @@ class Game:
             (self.current_player.p + 1) % self.n_player]
         self.current_player.playing = True
         self.current_player.draw_card()
-        self.board.set_selectable(self.current_player.current_card.value)
+        self.board.set_selectable(self.current_player.current_card.value,
+                                  self.current_player.p)
 
     def play_card(self, pos):
         new_card = self.current_player.current_card
@@ -236,7 +239,8 @@ class Game:
                 self.board.board[card_pos] = new_card
                 self.board.game_start = False
                 self.next_player()
-                break
+                return card_pos
+        return False
 
     def is_winner(self):
 
