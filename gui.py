@@ -2,7 +2,7 @@ import pygame
 from network import Network
 from player import (Player, Board, Game)
 import logging
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.DEBUG, format="gui: %(message)s")
 
 
 width = 500
@@ -10,7 +10,39 @@ height = 500
 win = pygame.display.set_mode((width, height))
 pygame.display.set_caption("Client")
 
-client_number = 0
+
+class ConnectionWindow:
+    def __init__(self, n, win, max_player):
+        self.n = n
+        self.win = win
+        # self.player = 1
+        self.player_id = n.get_player_id()
+        self.player_in = 1
+        self.max_player = max_player
+        self.players = None
+        logging.info(f"ConnectionWindow: player_in: {self.player_in}")
+        logging.info(f"ConnectionWindow: player_id: {self.player_id}")
+
+    def loop(self):
+        self.player_in = self.n.send("n_connected")
+        if self.player_in == self.max_player:
+            self.players = self.n.send("get_players")
+            return False
+        else:
+            self.redraw_window()
+            return True
+
+    def redraw_window(self):
+        logging.info(f"ConnectionWindow: redrawing")
+        self.win.fill((0, 0, 0))
+        font_obj = pygame.font.SysFont('Sans Serif', 40)
+        text = f"Waiting for other players ({self.player_in}/{self.max_player})"
+        text_surface_obj = font_obj.render(text, False, (255,255,255))
+
+        text_rect_obj = text_surface_obj.get_rect()
+        text_rect_obj.center = (width/2, height/2)
+        self.win.blit(text_surface_obj, text_rect_obj)
+        pygame.display.update()
 
 
 def redraw_window(win, game):
@@ -20,32 +52,49 @@ def redraw_window(win, game):
 
 
 def main():
-    run = True
-    # n = Network()
-    # p1 = n.get_p()
 
-    game = Game(2)
+    run = True
+    # n = None
+    n = Network()
+    n_player = 2
+
+    game = None
     pygame.init()
     clock = pygame.time.Clock()
+    connection_window = ConnectionWindow(n, win, n_player)
 
+    state = "connection"
     while run:
         clock.tick(60)
-        # p2 = n.send(p1)
-
+        # need this loop to prevent game from crashing: why?
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
                 pygame.quit()
-            if event.type == pygame.MOUSEBUTTONUP:
-                game.play_card(pygame.mouse.get_pos())
-                winner = game.is_winner()
-                logging.info(f"(gui) winner: {winner}")
-                if winner >= 0:
-                    logging.info("(gui) reset game")
-                    game = Game(2)
 
-        # game.update_board()
-        redraw_window(win, game)
+        if state == "connection":
+            if not connection_window.loop():
+                game = Game(connection_window.player_id,
+                            connection_window.players)
+                state = "game"
+
+            logging.info("main: after connection loop")
+
+        elif state == "game":
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    run = False
+                    pygame.quit()
+                if event.type == pygame.MOUSEBUTTONUP:
+                    game.play_card(pygame.mouse.get_pos())
+                    winner = game.is_winner()
+                    logging.info(f"winner: {winner}")
+                    if winner >= 0:
+                        logging.info("reset game")
+                        game = Game(connection_window.player_id,
+                                    connection_window.players)
+
+            redraw_window(win, game)
 
 main()
 

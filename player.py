@@ -89,6 +89,10 @@ class Player:
         self.deck = self.make_deck()
         self.playing = False
         self.current_card = None
+        self.name = f"Player {self.p}"
+
+    def __repr__(self):
+        return f"Player(p={self.p})"
 
     def make_deck(self):
         res = []
@@ -107,9 +111,9 @@ class Player:
     def draw(self, win):
         font_obj = pygame.font.SysFont('Sans Serif', 40)
         if self.playing and self.current_card:
-            text = f"Player {self.p}: play {self.current_card.value}"
+            text = f"{self.name}: play {self.current_card.value}"
         else:
-            text = f"Player {self.p}: waiting"
+            text = f"{self.name}: waiting"
         text_surface_obj = font_obj.render(text, False, PLAYER_COLORS[self.p])
 
         if self.p == 0:
@@ -187,12 +191,17 @@ class Board:
 
 
 class Game:
-    def __init__(self, n_player):
-        self.n_player = n_player
+    def __init__(self, player_id, players):
+        self.player_id = player_id
+        self.players = players
         self.board = Board()
-        self.players = [Player(i) for i in range(n_player)]
         self.current_player = self.players[0]
         self.start_game()
+        self.players[self.player_id].name = f"(You) {self.players[self.player_id].name}"
+
+    @property
+    def n_player(self):
+        return len(self.players)
 
     @property
     def goal(self):
