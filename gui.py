@@ -129,12 +129,11 @@ def main_local():
 
     while run:
         clock.tick(60)
-        events = [e.type for e in pygame.event.get()]
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
                 pygame.quit()
-            elif pygame.MOUSEBUTTONUP in events:
+            elif event.type == pygame.MOUSEBUTTONUP:
                 mouse_pos = pygame.mouse.get_pos()
                 card_pos = game.play_card(mouse_pos)
                 winner = game.is_winner()
