@@ -3,19 +3,21 @@ import logging
 import pygame
 
 from network import Network
-from player import Game
-from action import Move
+from player import (Game, Move, Player, WIDTH)
+
 
 logging.basicConfig(level=logging.DEBUG, format="gui: %(message)s")
+pygame.font.init()
 
 caption = "Client"
+# TODO: use argparse
+# assign a caption name
 if len(sys.argv) > 1:
     caption = sys.argv[1]
 
 
-width = 500
-height = 500
-win = pygame.display.set_mode((width, height))
+HEIGHT = WIDTH
+win = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption(caption)
 
 
@@ -48,7 +50,7 @@ class ConnectionWindow:
         text_surface_obj = font_obj.render(text, False, (255,255,255))
 
         text_rect_obj = text_surface_obj.get_rect()
-        text_rect_obj.center = (width/2, height/2)
+        text_rect_obj.center = (WIDTH / 2, HEIGHT / 2)
         self.win.blit(text_surface_obj, text_rect_obj)
         pygame.display.update()
 
@@ -59,15 +61,12 @@ def redraw_window(win, game):
     pygame.display.update()
 
 
-def main():
-
+def main_online():
     run = True
-    # n = None
     n = Network()
     n_player = 2
 
     game = None
-    pygame.init()
     clock = pygame.time.Clock()
     connection_window = ConnectionWindow(n, win, n_player)
 
@@ -111,8 +110,41 @@ def main():
                 logging.info(f"other: {move}")
                 if move:
                     game.play_card(move.xy_pos)
+                    winner = game.is_winner()
+                    logging.info(f"winner: {winner}")
+                    if winner >= 0:
+                        logging.info("reset game")
+                        game = Game(connection_window.player_id,
+                                    connection_window.players)
 
             redraw_window(win, game)
 
-main()
+
+def main_local():
+    run = True
+    n_player = 2
+
+    game = Game(0, [Player(i) for i in range(n_player)])
+    clock = pygame.time.Clock()
+
+    while run:
+        clock.tick(60)
+        events = [e.type for e in pygame.event.get()]
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                run = False
+                pygame.quit()
+            elif pygame.MOUSEBUTTONUP in events:
+                mouse_pos = pygame.mouse.get_pos()
+                card_pos = game.play_card(mouse_pos)
+                winner = game.is_winner()
+                logging.info(f"winner: {winner}")
+                if winner >= 0:
+                    logging.info("reset game")
+                    game = Game(0, [Player(i) for i in range(n_player)])
+
+        redraw_window(win, game)
+
+# main_online()
+main_local()
 

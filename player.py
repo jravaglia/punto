@@ -33,6 +33,12 @@ def pos_to_xy(pos):
     return x, y
 
 
+class Move:
+    def __init__(self, p, xy_pos):
+        self.p = p
+        self.xy_pos = xy_pos
+
+
 class Card:
     def __init__(self, x, y, width, p, value):
         self.x = x
@@ -58,12 +64,6 @@ class Card:
         self.y = y
 
     def draw(self, win):
-
-        # if self.selectable:
-        #     border_color = COLOR_SELECTABLE
-        # else:
-        #     border_color = COLOR_EMPTY
-
         card_rect = pygame.Rect(self.rect)
         pygame.draw.rect(win, self.border, card_rect, 1)
 
@@ -96,6 +96,7 @@ class Player:
     def make_deck(self):
         res = []
         for val in range(1, 10):
+            # deck contain each value twice
             card = Card(0, 0, CARD_SIZE, self.p, val)
             res.append(card)
             card = Card(0, 0, CARD_SIZE, self.p, val)
@@ -144,37 +145,52 @@ class Board:
                 self.board[(i, j)] = EmptyCard(x, y, CARD_SIZE)
 
     def set_selectable(self, value, player_id):
+        """Set to True the selectable attribute and
+        set the color of the border of selectable cards.
+        Return a list of selectable card"""
         res = []
         for pos in self.get_all_selectables(value):
             card = self.board[pos]
             card.selectable = True
             card.border = PLAYER_COLORS[player_id]
             res.append(pos)
-
         return res
 
     def unset_selectable(self):
+        """Reset the selectable attribute and border color of all cards."""
         for card in self.board.values():
             card.selectable = False
             card.border = COLOR_EMPTY
 
     def get_all_selectables(self, value):
+        """Return the grid coords of selectable cards"""
         res = set()
         if self.game_start:
+            # first turn, select the middle card
             res.add((5, 5))
         else:
             for (x, y), card in self.board.items():
                 if card.is_empty():
                     continue
+                # lower card
                 elif card.value < value:
                     res.add((x, y))
+                # check all surrounding cards
                 for pos in self.get_surrounding_pos(x, y):
                     surrounding_card = self.board[pos]
+                    # lower card
                     if surrounding_card.value < value:
                         res.add(pos)
         return res
 
     def get_surrounding_pos(self, x, y):
+        """Return the (x, y) grid coords of the surrounding cards.
+        Let 0 be the card at grid coordinates (x, y), this method returns
+        the grid coordinates of al the cards Xs surrounding 0.
+        XXX
+        X0X
+        XXX
+        """
         res = []
         for x_shift in [-1, 0, 1]:
             for y_shift in [-1, 0, 1]:
